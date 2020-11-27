@@ -3,10 +3,10 @@ package tripica
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-	customhttp "shared-tripica-library/http"
+	gohttp "net/http"
+	"shared-tripica-library/http"
 	"shared-tripica-library/http/errors"
-	"shared-tripica-library/logging"
+	"shared-tripica-library/log"
 	"strings"
 	"time"
 )
@@ -22,8 +22,8 @@ const (
 )
 
 // Billing manages billing related endpoints within triPica.
-type Billing struct {
-	httpClient *customhttp.Client
+type billingAPI struct {
+	httpClient *http.Client
 	address    string
 
 	// Defines the amount of days in the future, after which
@@ -34,11 +34,11 @@ type Billing struct {
 	// before we start creating any claims for them.
 	customerGracePeriodDays uint
 
-	logger logging.Logger
+	logger log.Logger
 }
 
 // GetBillingAccountByMBA retrieves a billing account using provided MBA.
-func (b *Billing) GetBillingAccountByMBA(mba string) (*BillingAccount, error) {
+func (b *billingAPI) GetBillingAccountByMBA(mba string) (*BillingAccount, error) {
 	url := fmt.Sprintf(b.address+billingPathGetBillingAccountByMBA, mba)
 
 	resp, err := b.httpClient.Get(url)
@@ -46,11 +46,11 @@ func (b *Billing) GetBillingAccountByMBA(mba string) (*BillingAccount, error) {
 		return nil, NewTriPicaError(errors.NewHTTPRequestError(err))
 	}
 
-	if resp.StatusCode() == http.StatusNoContent {
+	if resp.StatusCode() == gohttp.StatusNoContent {
 		return nil, nil
 	}
 
-	if resp.StatusCode() != http.StatusOK {
+	if resp.StatusCode() != gohttp.StatusOK {
 		err := &errors.HTTPError{
 			Body:       string(resp.Body()),
 			StatusCode: resp.StatusCode(),
@@ -67,7 +67,7 @@ func (b *Billing) GetBillingAccountByMBA(mba string) (*BillingAccount, error) {
 }
 
 // GetDueBillingAccountBalancesByCustomer retrieves account balances for the customer that are due.
-func (b *Billing) GetDueBillingAccountBalancesByCustomer(customerOUID string) ([]*BillingAccountBalance, error) {
+func (b *billingAPI) GetDueBillingAccountBalancesByCustomer(customerOUID string) ([]*BillingAccountBalance, error) {
 	url := fmt.Sprintf(b.address+billingPathGetDueBillingAccountBalancesByCustomer, customerOUID)
 
 	resp, err := b.httpClient.Get(url)
@@ -75,7 +75,7 @@ func (b *Billing) GetDueBillingAccountBalancesByCustomer(customerOUID string) ([
 		return nil, NewTriPicaError(errors.NewHTTPRequestError(err))
 	}
 
-	if resp.StatusCode() != http.StatusOK {
+	if resp.StatusCode() != gohttp.StatusOK {
 		err := &errors.HTTPError{
 			Body:       string(resp.Body()),
 			StatusCode: resp.StatusCode(),
@@ -94,7 +94,7 @@ func (b *Billing) GetDueBillingAccountBalancesByCustomer(customerOUID string) ([
 }
 
 // GetAppliedBillingChargesByTransactionIDs retrieves applied billing charges related to the transaction IDs.
-func (b *Billing) GetAppliedBillingChargesByTransactionIDs(transactionIDs string) ([]*AppliedBillingCharge, error) {
+func (b *billingAPI) GetAppliedBillingChargesByTransactionIDs(transactionIDs string) ([]*AppliedBillingCharge, error) {
 	url := b.address + billingPathGetAppliedBillingCharges + transactionIDs
 
 	resp, err := b.httpClient.Get(url)
@@ -102,7 +102,7 @@ func (b *Billing) GetAppliedBillingChargesByTransactionIDs(transactionIDs string
 		return nil, NewTriPicaError(errors.NewHTTPRequestError(err))
 	}
 
-	if resp.StatusCode() != http.StatusOK {
+	if resp.StatusCode() != gohttp.StatusOK {
 		err := &errors.HTTPError{
 			Body:       string(resp.Body()),
 			StatusCode: resp.StatusCode(),
@@ -121,7 +121,7 @@ func (b *Billing) GetAppliedBillingChargesByTransactionIDs(transactionIDs string
 }
 
 // GetSettlementNoteAdviceByBillingAccount retrieves settlement note advices for the billing account.
-func (b *Billing) GetSettlementNoteAdviceByBillingAccount(billingAccountOUID string) (
+func (b *billingAPI) GetSettlementNoteAdviceByBillingAccount(billingAccountOUID string) (
 	[]*SettlementNoteAdvice,
 	error,
 ) {
@@ -132,7 +132,7 @@ func (b *Billing) GetSettlementNoteAdviceByBillingAccount(billingAccountOUID str
 		return nil, NewTriPicaError(errors.NewHTTPRequestError(err))
 	}
 
-	if resp.StatusCode() != http.StatusOK {
+	if resp.StatusCode() != gohttp.StatusOK {
 		err := &errors.HTTPError{
 			Body:       string(resp.Body()),
 			StatusCode: resp.StatusCode(),
@@ -151,7 +151,7 @@ func (b *Billing) GetSettlementNoteAdviceByBillingAccount(billingAccountOUID str
 }
 
 // GetCustomerBillingAccounts returns the list of relevant MBAs and CBAs.
-func (b *Billing) GetCustomerBillingAccounts(customerOUID string) ([]*BillingAccount, error) {
+func (b *billingAPI) GetCustomerBillingAccounts(customerOUID string) ([]*BillingAccount, error) {
 	url := fmt.Sprintf(b.address+billingPathGetBillingAccountsByCustomer, customerOUID)
 
 	resp, err := b.httpClient.Get(url)
@@ -159,7 +159,7 @@ func (b *Billing) GetCustomerBillingAccounts(customerOUID string) ([]*BillingAcc
 		return nil, NewTriPicaError(errors.NewHTTPRequestError(err))
 	}
 
-	if resp.StatusCode() != http.StatusOK {
+	if resp.StatusCode() != gohttp.StatusOK {
 		err := &errors.HTTPError{
 			Body:       string(resp.Body()),
 			StatusCode: resp.StatusCode(),
@@ -179,7 +179,7 @@ func (b *Billing) GetCustomerBillingAccounts(customerOUID string) ([]*BillingAcc
 
 // GetAssociatedBillingAccounts retrieves all the billing accounts associated to provided master billing account,
 // including the MBA itself.
-func (b *Billing) GetAssociatedBillingAccounts(mba *BillingAccount) ([]*BillingAccount, error) {
+func (b *billingAPI) GetAssociatedBillingAccounts(mba *BillingAccount) ([]*BillingAccount, error) {
 	billingAccounts, err := b.GetCustomerBillingAccounts(mba.CustomerOUID)
 	if err != nil {
 		return nil, err
@@ -189,7 +189,7 @@ func (b *Billing) GetAssociatedBillingAccounts(mba *BillingAccount) ([]*BillingA
 }
 
 // CustomerHasFinalBill checks whether a final bill is associated with provided billing account.
-func (b *Billing) CustomerHasFinalBill(billingAccountOUID string) (bool, error) {
+func (b *billingAPI) CustomerHasFinalBill(billingAccountOUID string) (bool, error) {
 	advices, err := b.GetSettlementNoteAdviceByBillingAccount(billingAccountOUID)
 	if err != nil {
 		return false, err
@@ -199,14 +199,14 @@ func (b *Billing) CustomerHasFinalBill(billingAccountOUID string) (bool, error) 
 }
 
 // CustomerWithinGracePeriod checks whether a billing account tied to a customer is still in grace period.
-func (b *Billing) CustomerWithinGracePeriod(billingAccount *BillingAccount, now time.Time) bool {
+func (b *billingAPI) CustomerWithinGracePeriod(billingAccount *BillingAccount, now time.Time) bool {
 	gracePeriod := billingAccount.DateTimeCreate.AddDate(0, 0, int(b.customerGracePeriodDays))
 	return now.Before(gracePeriod)
 }
 
 // GetOverdueBalances consolidates billing charges and returns a list of overdue balances.
 // nolint: gocyclo
-func (b *Billing) GetOverdueBalances(
+func (b *billingAPI) GetOverdueBalances(
 	customerOUID string,
 	masterBillingAccount *BillingAccount,
 ) (
@@ -265,7 +265,7 @@ func (b *Billing) GetOverdueBalances(
 	return overdueBalances, nil
 }
 
-func (b *Billing) inferBalanceData(balance *BillingAccountBalance, billingAccount *BillingAccount) error {
+func (b *billingAPI) inferBalanceData(balance *BillingAccountBalance, billingAccount *BillingAccount) error {
 	balance.InferBalanceType()
 
 	if balance.InferredBalanceType != BalanceTypeBill {
