@@ -18,6 +18,7 @@ type Client struct {
 	logger      log.Logger
 
 	*billingAPI
+	*customerAPI
 }
 
 // Config configures the required information for accessing triPica endpoints.
@@ -51,6 +52,11 @@ func NewClient(config Config, client *http.Client, logger log.Logger) *Client {
 		httpClient: client,
 		address:    c.address + billingBasePath,
 		logger:     logger,
+	}
+
+	c.customerAPI = &customerAPI{
+		httpClient: client,
+		address:    c.address + customerBasePath,
 	}
 
 	return c
