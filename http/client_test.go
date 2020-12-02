@@ -10,8 +10,8 @@ import (
 
 	"shared-tripica-library/http"
 	httpmock "shared-tripica-library/http/mock"
-	"shared-tripica-library/logging"
 
+	"shared-tripica-library/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,6 +30,7 @@ type (
 )
 
 var methods = []string{stdhttp.MethodGet, stdhttp.MethodPatch, stdhttp.MethodPost, stdhttp.MethodPut, stdhttp.MethodDelete} //nolint
+// const log = logrus.New()
 
 // ServeHTTP handles requests to the handler. It reads the authorization token from request header
 // and stores it in the token field.
@@ -105,7 +106,7 @@ func TestWithAuthToken(t *testing.T) {
 			tokenHolder.On("InvalidateToken").Return()
 			tokenHolder.On("RefreshToken").Return(nil)
 			tokenHolder.On("RawToken").Return("token")
-			client := http.NewClient(logging.NewTestLogger(), http.WithAuthToken(tokenHolder))
+			client := http.NewClient(log.NewTestLogger(), http.WithAuthToken(tokenHolder))
 
 			res, err := executeRequest(client, srv.URL, method, nil)
 			assert.NoError(err)
@@ -123,7 +124,7 @@ func TestWithAuthToken(t *testing.T) {
 			tokenHolder.On("RefreshToken").Return(nil).Twice()
 			tokenHolder.On("InvalidateToken").Return().Twice()
 			tokenHolder.On("RawToken").Return("token").Twice()
-			client := http.NewClient(logging.NewTestLogger(), http.WithAuthToken(tokenHolder))
+			client := http.NewClient(log.NewTestLogger(), http.WithAuthToken(tokenHolder))
 
 			res, err := executeRequest(client, srv.URL, method, nil)
 			assert.NoError(err)
@@ -142,7 +143,7 @@ func TestWithAuthToken(t *testing.T) {
 			tokenHolder.On("RefreshToken").Return(RefreshError)
 			tokenHolder.On("RawToken").Return(nil)
 
-			client := http.NewClient(logging.NewTestLogger(), http.WithAuthToken(tokenHolder))
+			client := http.NewClient(log.NewTestLogger(), http.WithAuthToken(tokenHolder))
 
 			res, err := executeRequest(client, srv.URL, method, nil)
 			assert.EqualError(err, RefreshError.Error())
@@ -155,7 +156,7 @@ func TestWithAuthToken(t *testing.T) {
 			defer srv.Close()
 
 			tokenHolder := &httpmock.TokenHolder{}
-			client := http.NewClient(logging.NewTestLogger(), http.WithAuthToken(tokenHolder))
+			client := http.NewClient(log.NewTestLogger(), http.WithAuthToken(tokenHolder))
 
 			res, err := executeRequest(client, srv.URL, method, nil, http.SkipAuthToken())
 			assert.NoError(err)
@@ -175,7 +176,7 @@ func TestQueryParams(t *testing.T) {
 			srv := httptest.NewServer(&h)
 			defer srv.Close()
 
-			client := http.NewClient(logging.NewTestLogger())
+			client := http.NewClient(log.NewTestLogger())
 
 			params := http.QueryParams(map[string]string{
 				"test": "params",
@@ -199,7 +200,7 @@ func TestJSONClient(t *testing.T) {
 			srv := httptest.NewServer(&h)
 			defer srv.Close()
 
-			client := http.NewClient(logging.NewTestLogger(), http.JSONClient())
+			client := http.NewClient(log.NewTestLogger(), http.JSONClient())
 
 			res, err := executeRequest(client, srv.URL, method, nil)
 			assert.NoError(err)
@@ -221,7 +222,7 @@ func TestApply(t *testing.T) {
 			srv := httptest.NewServer(&h)
 			defer srv.Close()
 
-			client := http.NewClient(logging.NewTestLogger())
+			client := http.NewClient(log.NewTestLogger())
 			client.Apply(http.JSONClient())
 			res, err := executeRequest(client, srv.URL, method, nil)
 			assert.NoError(err)
@@ -243,7 +244,7 @@ func runMethodTests(method string, t *testing.T) {
 		srv := httptest.NewServer(&h)
 		defer srv.Close()
 
-		client := http.NewClient(logging.NewTestLogger())
+		client := http.NewClient(log.NewTestLogger())
 
 		res, err := executeRequest(client, srv.URL, method, body)
 		assert.NoError(err)
@@ -260,7 +261,7 @@ func runMethodTests(method string, t *testing.T) {
 		srv := httptest.NewServer(&h)
 		defer srv.Close()
 
-		client := http.NewClient(logging.NewTestLogger())
+		client := http.NewClient(log.NewTestLogger())
 
 		res, err := executeRequest(client, srv.URL, method, nil)
 		assert.NoError(err)
@@ -273,7 +274,7 @@ func runMethodTests(method string, t *testing.T) {
 	})
 
 	t.Run(method+" request to invalid URL fails", func(t *testing.T) {
-		client := http.NewClient(logging.NewTestLogger())
+		client := http.NewClient(log.NewTestLogger())
 
 		res, err := executeRequest(client, "invalidurl", method, nil)
 		assert.Error(err)
@@ -285,7 +286,7 @@ func runMethodTests(method string, t *testing.T) {
 		srv := httptest.NewServer(&h)
 		defer srv.Close()
 
-		client := http.NewClient(logging.NewTestLogger())
+		client := http.NewClient(log.NewTestLogger())
 
 		res, err := executeRequest(client, srv.URL, method, nil)
 		assert.NoError(err)
@@ -297,7 +298,7 @@ func runMethodTests(method string, t *testing.T) {
 		srv := httptest.NewServer(&h)
 		defer srv.Close()
 
-		client := http.NewClient(logging.NewTestLogger())
+		client := http.NewClient(log.NewTestLogger())
 
 		res, err := executeRequest(client, srv.URL, method, nil)
 		assert.NoError(err)

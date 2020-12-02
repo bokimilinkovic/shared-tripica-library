@@ -2,9 +2,8 @@ package http
 
 import (
 	"net/http"
+	"shared-tripica-library/log"
 	"time"
-
-	"shared-tripica-library/logging"
 
 	resty "github.com/go-resty/resty/v2"
 )
@@ -27,7 +26,7 @@ type (
 		retryer               *resty.Client
 		beforeRequest         []func(*request) error
 		afterRequest          []func(*Response, *request) (*Response, error)
-		logger                logging.Logger
+		logger                log.Logger
 		isWithAuthTokenCalled bool
 	}
 
@@ -51,7 +50,7 @@ type (
 
 // NewClient initializes a new Client with the provided functional Client options.
 // If no options are passed to the constructor, requests will not be retried.
-func NewClient(logger logging.Logger, options ...ClientOption) *Client {
+func NewClient(logger log.Logger, options ...ClientOption) *Client {
 	client := &Client{
 		retryer: resty.New(),
 		options: options,
@@ -68,7 +67,7 @@ func NewClient(logger logging.Logger, options ...ClientOption) *Client {
 }
 
 // DefaultClient initializes a new Client with the default retryer config values.
-func DefaultClient(logger logging.Logger) *Client {
+func DefaultClient(logger log.Logger) *Client {
 	return NewClient(logger, ConfigureRetryer(DefaultRetryerConfig()))
 }
 

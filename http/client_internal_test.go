@@ -3,10 +3,10 @@ package http
 import (
 	"net/http"
 	"net/http/httptest"
+	"shared-tripica-library/log"
 	"testing"
 	"time"
 
-	"shared-tripica-library/logging"
 	resty "github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 )
@@ -67,7 +67,7 @@ func TestClient(t *testing.T) {
 // TestNewClient verifies that the configuration is properly applied to the client.
 func TestNewClient(t *testing.T) {
 	assert := assert.New(t)
-	client := NewClient(logging.NewTestLogger(), ConfigureRetryer(NewRetryerConfig(2, 3, 4, 5)))
+	client := NewClient(log.NewTestLogger(), ConfigureRetryer(NewRetryerConfig(2, 3, 4, 5)))
 	retryer := client.retryer
 
 	assert.Equal(2, retryer.RetryCount)
@@ -80,7 +80,7 @@ func TestNewClient(t *testing.T) {
 // TestNewClient verifies that the configuration is properly applied to the client.
 func TestDefaultClient(t *testing.T) {
 	assert := assert.New(t)
-	client := DefaultClient(logging.NewTestLogger())
+	client := DefaultClient(log.NewTestLogger())
 	retryer := client.retryer
 
 	assert.Equal(4, retryer.RetryCount)
