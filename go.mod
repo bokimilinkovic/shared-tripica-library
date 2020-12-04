@@ -1,4 +1,4 @@
-module shared-tripica-library
+module tripica-client
 
 go 1.14
 

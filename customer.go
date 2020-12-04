@@ -3,8 +3,8 @@ package tripica
 import (
 	gohttp "net/http"
 	"fmt"
-	"shared-tripica-library/http"
-	"shared-tripica-library/http/errors"
+	"tripica-client/http"
+	"tripica-client/http/errors"
 	"encoding/json"
 )
 const (

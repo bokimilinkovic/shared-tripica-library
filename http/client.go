@@ -2,7 +2,7 @@ package http
 
 import (
 	"net/http"
-	"shared-tripica-library/log"
+	"tripica-client/log"
 	"time"
 
 	resty "github.com/go-resty/resty/v2"
@@ -60,7 +60,7 @@ func NewClient(logger log.Logger, options ...ClientOption) *Client {
 	for _, option := range options {
 		option(client)
 	}
-
+	client.retryer.SetHeader(acceptHeader, applicationJSON).SetHeader(contentTypeHeader, applicationJSON)
 	client.withTraceLogging()
 
 	return client

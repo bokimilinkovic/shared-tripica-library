@@ -8,10 +8,10 @@ import (
 	"net/url"
 	"testing"
 
-	"shared-tripica-library/http"
-	httpmock "shared-tripica-library/http/mock"
+	"tripica-client/http"
+	httpmock "tripica-client/http/mock"
 
-	"shared-tripica-library/log"
+	"tripica-client/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 	"net/http/httptest"
-	"shared-tripica-library/log"
+	"tripica-client/log"
 	"testing"
 	"time"
 

@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	gohttp "net/http"
-	"shared-tripica-library/http"
-	"shared-tripica-library/http/errors"
-	"shared-tripica-library/log"
+	"tripica-client/http"
+	"tripica-client/http/errors"
+	"tripica-client/log"
 	"strings"
-	"time"
 )
 
 const (
@@ -25,14 +24,6 @@ const (
 type billingAPI struct {
 	httpClient *http.Client
 	address    string
-
-	// Defines the amount of days in the future, after which
-	// a non-bill transaction is due.
-	dueDateDays uint
-
-	// Defines the amount of days since the creation of the customer's billing account
-	// before we start creating any claims for them.
-	customerGracePeriodDays uint
 
 	logger log.Logger
 }
@@ -177,52 +168,11 @@ func (b *billingAPI) GetCustomerBillingAccounts(customerOUID string) ([]*Billing
 	return billingAccounts, nil
 }
 
-
-func (b *billingAPI) inferBalanceData(balance *BillingAccountBalance, billingAccount *BillingAccount) error {
-	balance.InferBalanceType()
-
-	if balance.InferredBalanceType != BalanceTypeBill {
-		balance.InferDueDate(b.dueDateDays)
-		return nil
-	}
-
-	// If balance type is BILL, then we need to fetch settlement node advices and compare
-	// against each to infer the due date.
-	advices, err := b.GetSettlementNoteAdviceByBillingAccount(billingAccount.OUID)
-	if err != nil {
-		return fmt.Errorf("couldn't get settlement note advices: %w", err)
-	}
-
-	dueDateInferred := false
-	for _, advice := range advices {
-		if balance.SettlementNoteAdviceOUID == advice.OUID {
-			balance.SettlementNoteAdvice = advice
-			balance.InferBillDueDate(advice)
-			dueDateInferred = true
-			break
-		}
-	}
-
-	if !dueDateInferred {
-		// If no settlement advice could be associated with this balance, then ignore it.
-		balance.Ignore = true
-		b.logger.Warnf("service/tripica: couldn't infer due date for a bill; balance OUID: %s; transaction ID: %s",
-			balance.OUID,
-			balance.TransactionID,
-		)
-	}
-
-	return nil
-}
-
 const (
 	billPresentationMediaPostmail    = "POSTMAIL"
-	settlementNoteAdviceCategoryLast = "LAST"
-	settlementNoteAdviceStateSettled = "SETTLED"
-	billingAccountRelationshipParent = "PARENT"
 )
 
-//Models for exchanging data with tripica
+// Models for exchanging data with tripica
 type (
 	BillingAccount struct {
 		OUID                        string                       `json:"ouid"`
@@ -268,91 +218,6 @@ type BillingAccountBalance struct {
 	TransactionID            string                  `json:"transactionId"`
 	SettlementNoteAdviceOUID string                  `json:"settlementNoteAdviceOuid"`
 	StartDate                Date                    `json:"startDateTime"`
-	SettlementNoteAdvice     *SettlementNoteAdvice   `json:"-"` // Calculated by Dunning Coordinator.
-	DueDate                  Date                    `json:"-"` // Calculated by Dunning Coordinator.
-	Ignore                   bool                    `json:"-"` // Calculated by Dunning Coordinator.
-	InferredBalanceType      BalanceType             `json:"-"` // Calculated by Dunning Coordinator.
-	Charges                  []*AppliedBillingCharge `json:"-"` // Calculated by Dunning Coordinator.
-}
-
-// InferBalanceType infers balance types from related charges.
-// There are 5 possible types a balance can have:
-// 	1. Abschlag - if only abschlag charges are present
-// 	2. Rechnung - if any bill charges are present
-// 	3. Abschlag und Bankgebühren - if both down payments and bank fees are present
-// 	4. Bankgebühren - if only bank fee is present
-// 	5. Other - if no balance type can be inferred from charges.
-func (b *BillingAccountBalance) InferBalanceType() {
-	isDownPayment, isBill, isBankFee := false, false, false
-
-	for _, c := range b.Charges {
-		if c.ignoreChargeType() {
-			continue
-		}
-		if c.isBill() {
-			isBill = true
-			// If at least one bill is contained, then we don't need to filter the others - the balance type is a bill.
-			break
-		}
-		if c.isDownPayment() {
-			isDownPayment = true
-		}
-
-		if c.isBankFee() {
-			isBankFee = true
-		}
-	}
-
-	b.inferTypeFromContainedCharges(isDownPayment, isBill, isBankFee)
-}
-
-// InferBillDueDate infers the due date for a bill balance, based on the charges.
-func (b *BillingAccountBalance) InferBillDueDate(settlementNoteAdvice *SettlementNoteAdvice) {
-	if b.InferredBalanceType != BalanceTypeBill {
-		return
-	}
-
-	today := time.Now().UTC()
-	paymentDueDate := time.Unix(0, settlementNoteAdvice.PaymentDueDate*int64(time.Millisecond))
-	if today.Before(paymentDueDate) {
-		// Ignore balances with dates in the future.
-		b.Ignore = true
-		return
-	}
-
-	b.DueDate.Time = paymentDueDate
-}
-
-// InferDueDate infers the due date for a non-bill balance.
-func (b *BillingAccountBalance) InferDueDate(dueDateDays uint) {
-	if b.InferredBalanceType == BalanceTypeBill {
-		return
-	}
-
-	today := time.Now().UTC()
-	calculatedDueDate := b.StartDate.Time.AddDate(0, 0, int(dueDateDays))
-	if today.Before(calculatedDueDate) {
-		// Ignore balances with dates in the future.
-		b.Ignore = true
-		return
-	}
-
-	b.DueDate.Time = b.StartDate.Time
-}
-
-func (b *BillingAccountBalance) inferTypeFromContainedCharges(downPayment, bill, bankFee bool) {
-	switch {
-	case bill:
-		b.InferredBalanceType = BalanceTypeBill
-	case bankFee && downPayment:
-		b.InferredBalanceType = BalanceTypeDownPaymentAndBankFee
-	case downPayment:
-		b.InferredBalanceType = BalanceTypeDownPayment
-	case bankFee:
-		b.InferredBalanceType = BalanceTypeBankFee
-	default:
-		b.InferredBalanceType = BalanceTypeOther
-	}
 }
 
 // AppliedBillingCharge represents a triPica applied billing charge.

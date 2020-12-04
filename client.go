@@ -1,9 +1,9 @@
 package tripica
 
 import (
-	"shared-tripica-library/http"
-	"shared-tripica-library/jwt"
-	"shared-tripica-library/log"
+	"tripica-client/http"
+	"tripica-client/jwt"
+	"tripica-client/log"
 	"sync"
 )
 
@@ -41,9 +41,12 @@ func NewClient(config Config, client *http.Client, logger log.Logger) *Client {
 		logger:      logger,
 	}
 
+	tokenHolder := &Client{
+		credentials: config.Credentials,
+	}
+
 	client.Apply(
-		http.WithAuthToken(c),
-		http.JSONClient(),
+		http.WithAuthToken(tokenHolder),
 	)
 
 	c.httpClient = client
