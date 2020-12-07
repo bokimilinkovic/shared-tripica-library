@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	gohttp "net/http"
-	"strings"
 	"tripica-client/http"
 	"tripica-client/http/errors"
 	"tripica-client/log"
@@ -232,30 +231,6 @@ type AppliedBillingCharge struct {
 	BillingAccountOUID string `json:"billingAccountOuid"`
 	TransactionID      string `json:"transactionId"`
 	CurrencyCode       string `json:"currencyCode"`
-}
-
-// ignoreChargeType checks whether this charge should be ignored when inferring a balance type.
-func (c *AppliedBillingCharge) ignoreChargeType() bool {
-	chargesToIgnore := [...]string{"CANCELLED", "REJECTED", "RETURN", "REBOOKED", "RECEIVABLE"}
-	for _, cti := range chargesToIgnore {
-		if strings.Contains(c.GeneralLedgerID, cti) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (c *AppliedBillingCharge) isBankFee() bool {
-	return strings.Contains(c.GeneralLedgerID, "BANK_FEE")
-}
-
-func (c *AppliedBillingCharge) isDownPayment() bool {
-	return strings.Contains(c.GeneralLedgerID, "ABSCHLAG")
-}
-
-func (c *AppliedBillingCharge) isBill() bool {
-	return strings.Contains(c.GeneralLedgerID, "BILL")
 }
 
 // SettlementNoteAdvice represents a triPica settlement note advice.
