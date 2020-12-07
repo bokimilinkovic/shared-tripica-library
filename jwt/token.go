@@ -8,7 +8,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-var tokenClaimError = errors.New("unable to parse JWT: unexpected claims type")
+var errTokenClaim = errors.New("unable to parse JWT: unexpected claims type")
 
 // Token wraps a raw JWT and its claims.
 type Token struct {
@@ -40,12 +40,12 @@ func (t *Token) IsExpired() bool {
 func parseClaims(raw string) (*jwt.StandardClaims, error) {
 	token, _, err := new(jwt.Parser).ParseUnverified(raw, &jwt.StandardClaims{})
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse JWT: %s", err)
+		return nil, fmt.Errorf("unable to parse JWT: %w", err)
 	}
 
 	claims, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok || claims == nil {
-		return nil, tokenClaimError
+		return nil, errTokenClaim
 	}
 
 	return claims, nil

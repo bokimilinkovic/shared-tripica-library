@@ -7,13 +7,12 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
-
 	"tripica-client/http"
 	httpmock "tripica-client/http/mock"
+	"tripica-client/log"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"tripica-client/log"
 )
 
 type (
@@ -30,7 +29,7 @@ type (
 )
 
 var methods = []string{stdhttp.MethodGet, stdhttp.MethodPatch, stdhttp.MethodPost, stdhttp.MethodPut, stdhttp.MethodDelete} //nolint
-var refreshError = errors.New("refresh token error")
+var errRefresh = errors.New("refresh token error")
 
 // ServeHTTP handles requests to the handler. It reads the authorization token from request header
 // and stores it in the token field.
@@ -95,6 +94,7 @@ func TestClient_Delete(t *testing.T) {
 	runMethodTests(stdhttp.MethodDelete, t)
 }
 
+// nolint: funlen
 func TestWithAuthToken(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -143,13 +143,13 @@ func TestWithAuthToken(t *testing.T) {
 
 			tokenHolder := &httpmock.TokenHolder{}
 			tokenHolder.On("InvalidateToken").Return()
-			tokenHolder.On("RefreshToken").Return(refreshError)
+			tokenHolder.On("RefreshToken").Return(errRefresh)
 			tokenHolder.On("RawToken").Return(nil)
 
 			client := http.NewClient(log.NewTestLogger(), http.WithAuthToken(tokenHolder))
 
 			res, err := executeRequest(client, srv.URL, method, nil)
-			assert.EqualError(err, refreshError.Error())
+			assert.EqualError(err, errRefresh.Error())
 			assert.Nil(res)
 		})
 
@@ -240,6 +240,7 @@ func TestApply(t *testing.T) {
 	}
 }
 
+// nolint: funlen
 func runMethodTests(method string, t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
