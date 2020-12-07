@@ -24,6 +24,7 @@ func wthTrace(stackFramesToSkip int) string {
 	}
 
 	fn := runtime.FuncForPC(pc)
+
 	return fn.Name()
 }
 

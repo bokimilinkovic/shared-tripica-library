@@ -8,6 +8,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+var tokenClaimError = errors.New("unable to parse JWT: unexpected claims type")
+
 // Token wraps a raw JWT and its claims.
 type Token struct {
 	Raw    string
@@ -43,7 +45,7 @@ func parseClaims(raw string) (*jwt.StandardClaims, error) {
 
 	claims, ok := token.Claims.(*jwt.StandardClaims)
 	if !ok || claims == nil {
-		return nil, errors.New("unable to parse JWT: unexpected claims type")
+		return nil, tokenClaimError
 	}
 
 	return claims, nil

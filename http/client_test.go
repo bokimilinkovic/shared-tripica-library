@@ -11,9 +11,9 @@ import (
 	"tripica-client/http"
 	httpmock "tripica-client/http/mock"
 
-	"tripica-client/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"tripica-client/log"
 )
 
 type (
@@ -30,16 +30,18 @@ type (
 )
 
 var methods = []string{stdhttp.MethodGet, stdhttp.MethodPatch, stdhttp.MethodPost, stdhttp.MethodPut, stdhttp.MethodDelete} //nolint
-// const log = logrus.New()
+var refreshError = errors.New("refresh token error")
 
 // ServeHTTP handles requests to the handler. It reads the authorization token from request header
 // and stores it in the token field.
 func (h *handler) ServeHTTP(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 	h.query = r.URL.Query()
 	h.header = r.Header
+
 	if r.Method != stdhttp.MethodGet {
 		h.readBody(w, r)
 	}
+
 	w.WriteHeader(stdhttp.StatusOK)
 	_, err := w.Write([]byte("message"))
 	h.require.NoError(err)
@@ -49,9 +51,11 @@ func (h *handler) readBody(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(stdhttp.StatusBadRequest)
+
 		return
 	}
 	defer r.Body.Close()
+
 	h.request = body
 }
 
@@ -137,16 +141,15 @@ func TestWithAuthToken(t *testing.T) {
 			srv := httptest.NewServer(&h)
 			defer srv.Close()
 
-			RefreshError := errors.New("refresh token error")
 			tokenHolder := &httpmock.TokenHolder{}
 			tokenHolder.On("InvalidateToken").Return()
-			tokenHolder.On("RefreshToken").Return(RefreshError)
+			tokenHolder.On("RefreshToken").Return(refreshError)
 			tokenHolder.On("RawToken").Return(nil)
 
 			client := http.NewClient(log.NewTestLogger(), http.WithAuthToken(tokenHolder))
 
 			res, err := executeRequest(client, srv.URL, method, nil)
-			assert.EqualError(err, RefreshError.Error())
+			assert.EqualError(err, refreshError.Error())
 			assert.Nil(res)
 		})
 
@@ -169,6 +172,7 @@ func TestWithAuthToken(t *testing.T) {
 func TestQueryParams(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
+
 	for _, method := range methods {
 		method := method
 		t.Run(method+" request with query params is successfully sent", func(t *testing.T) {
@@ -193,6 +197,7 @@ func TestQueryParams(t *testing.T) {
 func TestJSONClient(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
+
 	for _, method := range methods {
 		method := method
 		t.Run(method+" request with json headers is successfully sent", func(t *testing.T) {
@@ -215,6 +220,7 @@ func TestJSONClient(t *testing.T) {
 func TestApply(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
+
 	for _, method := range methods {
 		method := method
 		t.Run(method+" request is successfully sent with the applied options", func(t *testing.T) {
@@ -313,7 +319,9 @@ func executeRequest(
 	options ...http.RequestOption,
 ) (*http.Response, error) {
 	var res *http.Response
+
 	var err error
+
 	switch method {
 	case stdhttp.MethodGet:
 		res, err = client.Get(url, options...)

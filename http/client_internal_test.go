@@ -3,9 +3,9 @@ package http
 import (
 	"net/http"
 	"net/http/httptest"
-	"tripica-client/log"
 	"testing"
 	"time"
+	"tripica-client/log"
 
 	resty "github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
@@ -26,6 +26,7 @@ func TestClient(t *testing.T) {
 
 	h := handler{}
 	srv := httptest.NewServer(&h)
+
 	defer srv.Close()
 
 	client := &Client{retryer: resty.New()}

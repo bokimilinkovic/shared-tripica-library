@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	gohttp "net/http"
+	"strings"
 	"tripica-client/http"
 	"tripica-client/http/errors"
 	"tripica-client/log"
-	"strings"
 )
 
 const (
@@ -46,6 +46,7 @@ func (b *billingAPI) GetBillingAccountByMBA(mba string) (*BillingAccount, error)
 			Body:       string(resp.Body()),
 			StatusCode: resp.StatusCode(),
 		}
+
 		return nil, NewTriPicaError(fmt.Errorf("couldn't retrieve billing account with mba %s: %w", mba, err))
 	}
 
@@ -71,6 +72,7 @@ func (b *billingAPI) GetDueBillingAccountBalancesByCustomer(customerOUID string)
 			Body:       string(resp.Body()),
 			StatusCode: resp.StatusCode(),
 		}
+
 		return nil, NewTriPicaError(
 			fmt.Errorf("couldn't retrieve billing balances with customerOUID %s: %w", customerOUID, err),
 		)
@@ -98,6 +100,7 @@ func (b *billingAPI) GetAppliedBillingChargesByTransactionIDs(transactionIDs str
 			Body:       string(resp.Body()),
 			StatusCode: resp.StatusCode(),
 		}
+
 		return nil, NewTriPicaError(
 			fmt.Errorf("couldn't retrieve billing charges with transactionIDs %s: %w", transactionIDs, err),
 		)
@@ -128,6 +131,7 @@ func (b *billingAPI) GetSettlementNoteAdviceByBillingAccount(billingAccountOUID 
 			Body:       string(resp.Body()),
 			StatusCode: resp.StatusCode(),
 		}
+
 		return nil, NewTriPicaError(
 			fmt.Errorf("couldn't retrieve settlement notes with billingAccountOUID %s: %w", billingAccountOUID, err),
 		)
@@ -155,6 +159,7 @@ func (b *billingAPI) GetCustomerBillingAccounts(customerOUID string) ([]*Billing
 			Body:       string(resp.Body()),
 			StatusCode: resp.StatusCode(),
 		}
+
 		return nil, NewTriPicaError(
 			fmt.Errorf("couldn't retrieve customer billing accounts with customerOUID %s: %w", customerOUID, err),
 		)
@@ -169,10 +174,10 @@ func (b *billingAPI) GetCustomerBillingAccounts(customerOUID string) ([]*Billing
 }
 
 const (
-	billPresentationMediaPostmail    = "POSTMAIL"
+	billPresentationMediaPostmail = "POSTMAIL"
 )
 
-// Models for exchanging data with tripica
+// Models for exchanging data with tripica.
 type (
 	BillingAccount struct {
 		OUID                        string                       `json:"ouid"`
@@ -210,14 +215,14 @@ const (
 
 // BillingAccountBalance represents a triPica billing account balance.
 type BillingAccountBalance struct {
-	OUID                     string                  `json:"ouid"`
-	BillingAccountOUID       string                  `json:"billingAccountOuid"`
-	Amount                   int                     `json:"amount"`
-	Status                   string                  `json:"status"`
-	Type                     string                  `json:"type"`
-	TransactionID            string                  `json:"transactionId"`
-	SettlementNoteAdviceOUID string                  `json:"settlementNoteAdviceOuid"`
-	StartDate                Date                    `json:"startDateTime"`
+	OUID                     string `json:"ouid"`
+	BillingAccountOUID       string `json:"billingAccountOuid"`
+	Amount                   int    `json:"amount"`
+	Status                   string `json:"status"`
+	Type                     string `json:"type"`
+	TransactionID            string `json:"transactionId"`
+	SettlementNoteAdviceOUID string `json:"settlementNoteAdviceOuid"`
+	StartDate                Date   `json:"startDateTime"`
 }
 
 // AppliedBillingCharge represents a triPica applied billing charge.
@@ -237,6 +242,7 @@ func (c *AppliedBillingCharge) ignoreChargeType() bool {
 			return true
 		}
 	}
+
 	return false
 }
 

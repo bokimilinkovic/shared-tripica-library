@@ -1,8 +1,8 @@
 package mock
 
 import (
-	"tripica-client/http"
 	"github.com/stretchr/testify/mock"
+	"tripica-client/http"
 )
 
 // Client mocks an http.Client object.

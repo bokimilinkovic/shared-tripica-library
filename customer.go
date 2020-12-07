@@ -1,12 +1,13 @@
 package tripica
 
 import (
-	gohttp "net/http"
+	"encoding/json"
 	"fmt"
+	gohttp "net/http"
 	"tripica-client/http"
 	"tripica-client/http/errors"
-	"encoding/json"
 )
+
 const (
 	customerBasePath = "/api/private/v1/agent/customer"
 
@@ -38,6 +39,7 @@ func (c *customerAPI) GetCustomerByOUID(ouid string) (*Customer, error) {
 			Body:       string(resp.Body()),
 			StatusCode: resp.StatusCode(),
 		}
+
 		return nil, NewTriPicaError(fmt.Errorf("couldn't retrieve customer with ouid %s: %w", ouid, err))
 	}
 
@@ -67,6 +69,7 @@ func (c *customerAPI) GetCustomerByName(customerName string) (*Customer, error) 
 			Body:       string(resp.Body()),
 			StatusCode: resp.StatusCode(),
 		}
+
 		return nil, NewTriPicaError(fmt.Errorf("couldn't retrieve customer with customerName %s: %w", customerName, err))
 	}
 
@@ -77,7 +80,6 @@ func (c *customerAPI) GetCustomerByName(customerName string) (*Customer, error) 
 
 	return &customer, nil
 }
-
 
 // Customer represents a triPica customer.
 type Customer struct {
@@ -99,4 +101,3 @@ type CustomerPaymentMean struct {
 type CustomerPaymentMeanCharacteristics struct {
 	IBAN string `json:"iban"`
 }
-

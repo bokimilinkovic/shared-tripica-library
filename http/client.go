@@ -2,8 +2,8 @@ package http
 
 import (
 	"net/http"
-	"tripica-client/log"
 	"time"
+	"tripica-client/log"
 
 	resty "github.com/go-resty/resty/v2"
 )
@@ -60,6 +60,7 @@ func NewClient(logger log.Logger, options ...ClientOption) *Client {
 	for _, option := range options {
 		option(client)
 	}
+
 	client.retryer.SetHeader(acceptHeader, applicationJSON).SetHeader(contentTypeHeader, applicationJSON)
 	client.withTraceLogging()
 
@@ -150,6 +151,7 @@ func ConfigureRetryer(config *RetryerConfig) ClientOption {
 							return true
 						}
 					}
+
 					return false
 				},
 			)
@@ -192,6 +194,7 @@ func WithAuthToken(holder tokenHolder) ClientOption {
 func (c *Client) withTraceLogging() {
 	after := func(response *Response, request *request) (*Response, error) {
 		traceInfo := request.baseRequest.TraceInfo()
+
 		c.logger.WithFields(map[string]interface{}{
 			"response_time": traceInfo.ResponseTime,
 			"total_time":    traceInfo.TotalTime,
@@ -199,6 +202,7 @@ func (c *Client) withTraceLogging() {
 			"method":        request.method,
 			"status_code":   response.StatusCode(),
 		}).Debug("")
+
 		return response, nil
 	}
 	c.afterRequest = append(c.afterRequest, after)
@@ -215,6 +219,7 @@ func (c *Client) withAuthToken(holder tokenHolder) {
 		}
 
 		request.setAuthToken(holder.RawToken())
+
 		return nil
 	}
 	c.beforeRequest = append(c.beforeRequest, before)
@@ -229,6 +234,7 @@ func (c *Client) withAuthToken(holder tokenHolder) {
 		}
 
 		holder.InvalidateToken()
+
 		if !request.shouldRepeat {
 			return response, nil
 		}
@@ -256,7 +262,9 @@ func (c *Client) withBasicAuthToken(token string) {
 		if request.skipAuthToken {
 			return nil
 		}
+
 		request.baseRequest.SetHeader("Authorization", "Basic "+token)
+
 		return nil
 	}
 	c.beforeRequest = append(c.beforeRequest, before)

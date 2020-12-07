@@ -1,14 +1,14 @@
 package tripica
 
 import (
+	"sync"
 	"tripica-client/http"
 	"tripica-client/jwt"
 	"tripica-client/log"
-	"sync"
 )
 
 // Client allows HTTP communication with a triPica server.
-// Every tripica separated module(biling,customer,individual...) are built in this client
+// Every tripica separated module(biling,customer,individual...) are built in this client.
 type Client struct {
 	address     string
 	credentials Credentials

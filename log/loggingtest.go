@@ -13,18 +13,21 @@ func New() *StdLogger {
 		Logger: logrus.New(),
 	}
 }
+
 // NewTestLogger creates instance of Logger which could be used in tests.
 func NewTestLogger() *StdLogger {
 	logger := New()
 	logger.Out = &loggerOut{
 		source: make(map[int]string),
 	}
+
 	return logger
 }
 
-func (l *StdLogger)WithFields(fields map[string]interface{}) Logger{
+func (l *StdLogger) WithFields(fields map[string]interface{}) Logger {
 	log := logrus.New()
 	log.WithFields(fields)
+
 	return &StdLogger{log}
 }
 
@@ -40,5 +43,6 @@ type loggerOut struct {
 // Write writes given data to the source field.
 func (l *loggerOut) Write(data []byte) (int, error) {
 	l.source[len(l.source)] = string(data)
+
 	return len(data), nil
 }

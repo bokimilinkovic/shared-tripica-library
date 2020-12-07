@@ -46,6 +46,7 @@ func (r *request) setAuthToken(token string) {
 func SkipAuthToken() RequestOption {
 	return func(r *request) *request {
 		r.skipAuthToken = true
+
 		return r
 	}
 }
@@ -54,6 +55,7 @@ func SkipAuthToken() RequestOption {
 func QueryParams(params map[string]string) RequestOption {
 	return func(r *request) *request {
 		r.baseRequest.SetQueryParams(params)
+
 		return r
 	}
 }
@@ -62,6 +64,7 @@ func QueryParams(params map[string]string) RequestOption {
 func PostForm() RequestOption {
 	return func(r *request) *request {
 		r.baseRequest.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
 		return r
 	}
 }
@@ -70,6 +73,7 @@ func PostForm() RequestOption {
 func JSONContent() RequestOption {
 	return func(r *request) *request {
 		r.baseRequest.Header.Add("Content-Type", "application/json")
+
 		return r
 	}
 }
