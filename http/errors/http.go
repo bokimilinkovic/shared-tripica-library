@@ -28,9 +28,11 @@ func (e *HTTPError) Error() string {
 	if e.Body != "" {
 		m["body"] = e.Body
 	}
+
 	if e.StatusCode != 0 {
 		m["status_code"] = e.StatusCode
 	}
+
 	if e.Err != nil {
 		m["error"] = e.Err.Error()
 	}

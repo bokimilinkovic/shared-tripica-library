@@ -3,8 +3,7 @@ package http
 import (
 	"net/http"
 	"time"
-
-	"shared-tripica-library/logging"
+	"tripica-client/log"
 
 	resty "github.com/go-resty/resty/v2"
 )
@@ -27,7 +26,7 @@ type (
 		retryer               *resty.Client
 		beforeRequest         []func(*request) error
 		afterRequest          []func(*Response, *request) (*Response, error)
-		logger                logging.Logger
+		logger                log.Logger
 		isWithAuthTokenCalled bool
 	}
 
@@ -51,7 +50,7 @@ type (
 
 // NewClient initializes a new Client with the provided functional Client options.
 // If no options are passed to the constructor, requests will not be retried.
-func NewClient(logger logging.Logger, options ...ClientOption) *Client {
+func NewClient(logger log.Logger, options ...ClientOption) *Client {
 	client := &Client{
 		retryer: resty.New(),
 		options: options,
@@ -62,13 +61,14 @@ func NewClient(logger logging.Logger, options ...ClientOption) *Client {
 		option(client)
 	}
 
+	client.retryer.SetHeader(acceptHeader, applicationJSON).SetHeader(contentTypeHeader, applicationJSON)
 	client.withTraceLogging()
 
 	return client
 }
 
 // DefaultClient initializes a new Client with the default retryer config values.
-func DefaultClient(logger logging.Logger) *Client {
+func DefaultClient(logger log.Logger) *Client {
 	return NewClient(logger, ConfigureRetryer(DefaultRetryerConfig()))
 }
 
@@ -151,6 +151,7 @@ func ConfigureRetryer(config *RetryerConfig) ClientOption {
 							return true
 						}
 					}
+
 					return false
 				},
 			)
@@ -193,6 +194,7 @@ func WithAuthToken(holder tokenHolder) ClientOption {
 func (c *Client) withTraceLogging() {
 	after := func(response *Response, request *request) (*Response, error) {
 		traceInfo := request.baseRequest.TraceInfo()
+
 		c.logger.WithFields(map[string]interface{}{
 			"response_time": traceInfo.ResponseTime,
 			"total_time":    traceInfo.TotalTime,
@@ -200,6 +202,7 @@ func (c *Client) withTraceLogging() {
 			"method":        request.method,
 			"status_code":   response.StatusCode(),
 		}).Debug("")
+
 		return response, nil
 	}
 	c.afterRequest = append(c.afterRequest, after)
@@ -216,6 +219,7 @@ func (c *Client) withAuthToken(holder tokenHolder) {
 		}
 
 		request.setAuthToken(holder.RawToken())
+
 		return nil
 	}
 	c.beforeRequest = append(c.beforeRequest, before)
@@ -230,6 +234,7 @@ func (c *Client) withAuthToken(holder tokenHolder) {
 		}
 
 		holder.InvalidateToken()
+
 		if !request.shouldRepeat {
 			return response, nil
 		}
@@ -257,7 +262,9 @@ func (c *Client) withBasicAuthToken(token string) {
 		if request.skipAuthToken {
 			return nil
 		}
+
 		request.baseRequest.SetHeader("Authorization", "Basic "+token)
+
 		return nil
 	}
 	c.beforeRequest = append(c.beforeRequest, before)

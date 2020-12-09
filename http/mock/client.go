@@ -1,7 +1,8 @@
 package mock
 
 import (
-	"shared-tripica-library/http"
+	"tripica-client/http"
+
 	"github.com/stretchr/testify/mock"
 )
 
