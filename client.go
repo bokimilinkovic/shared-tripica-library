@@ -1,8 +1,10 @@
 package tripica
 
 import (
+	"fmt"
 	"sync"
 	"tripica-client/http"
+	"tripica-client/http/errors"
 	"tripica-client/jwt"
 	"tripica-client/log"
 )
@@ -17,8 +19,10 @@ type Client struct {
 	httpClient  *http.Client
 	logger      log.Logger
 
+	*loginAPI
 	*billingAPI
 	*customerAPI
+	*individualAPI
 }
 
 // Config configures the required information for accessing triPica endpoints.
@@ -28,9 +32,12 @@ type Config struct {
 }
 
 // Credentials objects hold data allowing the service to be authenticated by triPica.
+// While password is required, only one of the remaining attributes is necessary.
+// If both email and alias are submitted, they both need to be correct.
 type Credentials struct {
 	Email    string
 	Password string
+	Alias    string
 }
 
 // NewClient returns Client for communication to tripica.
@@ -51,6 +58,14 @@ func NewClient(config Config, client *http.Client, logger log.Logger) *Client {
 
 	c.httpClient = client
 
+	c.loginAPI = &loginAPI{
+		httpClient: client,
+		address: c.address,
+		addressAgent:    c.address + loginBasePathAgent,
+		addressCustomer: c.address + loginBasePathCustomer,
+		logger: logger,
+	}
+
 	c.billingAPI = &billingAPI{
 		httpClient: client,
 		address:    c.address + billingBasePath,
@@ -60,6 +75,12 @@ func NewClient(config Config, client *http.Client, logger log.Logger) *Client {
 	c.customerAPI = &customerAPI{
 		httpClient: client,
 		address:    c.address + customerBasePath,
+	}
+
+	c.individualAPI = &individualAPI{
+		httpClient: client,
+		address:    c.address + individualBasePath,
+		logger:     logger,
 	}
 
 	return c
@@ -74,7 +95,23 @@ func (c *Client) InvalidateToken() {
 
 // RefreshToken checks whether the token is valid and fetches a new one if it isn't.
 func (c *Client) RefreshToken() error {
-	// To be implemented...
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	if c.token != nil && !c.token.IsExpired() {
+		return nil
+	}
+
+	c.token = nil
+
+	token, err := c.loginAPI.authorize(c.credentials)
+	if err != nil {
+		authErr := &errors.AuthorizationError{Err: err}
+		return fmt.Errorf("couldn't authorize with triPica: %s", authErr)
+	}
+
+	c.token = token
+	
 	return nil
 }
 
