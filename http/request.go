@@ -2,6 +2,7 @@ package http
 
 import (
 	resty "github.com/go-resty/resty/v2"
+	"net/http"
 )
 
 type request struct {
@@ -73,6 +74,25 @@ func PostForm() RequestOption {
 func JSONContent() RequestOption {
 	return func(r *request) *request {
 		r.baseRequest.Header.Add("Content-Type", "application/json")
+
+		return r
+	}
+}
+
+func WithUserToken(token string) RequestOption {
+	return func(r *request) *request {
+		r.setAuthToken(token)
+
+		return r
+	}
+}
+
+func InvalidateCookie(cookieName string) RequestOption {
+	return func(r *request) *request {
+		r.baseRequest.SetCookie(&http.Cookie{
+			Name:  cookieName,
+			Value: "",
+		})
 
 		return r
 	}
