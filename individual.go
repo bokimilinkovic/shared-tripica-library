@@ -101,7 +101,7 @@ type ContactMediumType string
 // ContactMedium represents triPica individual's contact mediums.
 type ContactMedium struct {
 	OUID          string            `json:"ouid"`
-	Preferred     bool              `json:"preferred"`
+	Preferred     bool              `json:"prefered"`
 	Type          ContactMediumType `json:"type"`
 	StartDateTime Date              `json:"startDateTime"`
 	EndDateTime   *Date             `json:"endDateTime"`

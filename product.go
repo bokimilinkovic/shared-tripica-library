@@ -65,23 +65,6 @@ func (p *productAPI) GetProductsByCustomerOUID(customerOUID string, filter *Prod
 	return products, nil
 }
 
-// GetSubscriptionProducts returns all the subscription products associated to the provided customer
-// and related to provided billing accounts.
-func (p *productAPI) GetSubscriptionProducts(
-	customer *Customer,
-	billingAccounts []*BillingAccount,
-) ([]Product, error) {
-	products, err := p.GetProductsByCustomerOUID(customer.OUID, ProductDateFilterAllProducts())
-	if err != nil {
-		return nil, err
-	}
-
-	products = RelevantProducts(products, billingAccounts)
-	products = SubscriptionProducts(products)
-
-	return products, nil
-}
-
 // GetProductOrdersByCustomerOUID retrieves product orders for a customer.
 func (p *productAPI) GetProductOrdersByCustomerOUID(
 	customerOUID string,
@@ -207,20 +190,9 @@ func (f *ProductDateFilter) Encode() (string, error) {
 	return url.QueryEscape(string(v)), nil
 }
 
-// ProductDateFilterAllProducts returns a product date filter that allows for retrieval of all products.
-func ProductDateFilterAllProducts() *ProductDateFilter {
-	begin := 0
-	end := 4102444800000 // Year 2100 in milliseconds.
-
-	return &ProductDateFilter{
-		Begin: &begin,
-		End:   &end,
-	}
-}
-
-// RelevantProducts filters products based on their association with provided billing accounts.
+// ProductsAssociatedToBillingAccounts  filters products based on their association with provided billing accounts.
 // In order to get products relevant only for certain MBA and its CBAs, filter them first separately.
-func RelevantProducts(products []Product, billingAccounts []*BillingAccount) []Product {
+func ProductsAssociatedToBillingAccounts(products []Product, billingAccounts []*BillingAccount) []Product {
 	relevantProducts := products[:0]
 
 	for _, p := range products {
