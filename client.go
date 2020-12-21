@@ -23,6 +23,8 @@ type Client struct {
 	*billingAPI
 	*customerAPI
 	*individualAPI
+	*productAPI
+	*networkEntityAPI
 }
 
 // Config configures the required information for accessing triPica endpoints.
@@ -59,11 +61,11 @@ func NewClient(config Config, client *http.Client, logger log.Logger) *Client {
 	c.httpClient = client
 
 	c.loginAPI = &loginAPI{
-		httpClient: client,
-		address: c.address,
+		httpClient:      client,
+		address:         c.address,
 		addressAgent:    c.address + loginBasePathAgent,
 		addressCustomer: c.address + loginBasePathCustomer,
-		logger: logger,
+		logger:          logger,
 	}
 
 	c.billingAPI = &billingAPI{
@@ -80,6 +82,18 @@ func NewClient(config Config, client *http.Client, logger log.Logger) *Client {
 	c.individualAPI = &individualAPI{
 		httpClient: client,
 		address:    c.address + individualBasePath,
+		logger:     logger,
+	}
+
+	c.networkEntityAPI = &networkEntityAPI{
+		httpClient: client,
+		address:    c.address + networkEntityBasePath,
+		logger:     logger,
+	}
+
+	c.productAPI = &productAPI{
+		httpClient: client,
+		address:    c.address + productBasePath,
 		logger:     logger,
 	}
 
@@ -111,7 +125,7 @@ func (c *Client) RefreshToken() error {
 	}
 
 	c.token = token
-	
+
 	return nil
 }
 
