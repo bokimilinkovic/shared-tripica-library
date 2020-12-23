@@ -25,6 +25,7 @@ type Client struct {
 	*individualAPI
 	*productAPI
 	*networkEntityAPI
+	*notifyAPI
 }
 
 // Config configures the required information for accessing triPica endpoints.
@@ -95,6 +96,11 @@ func NewClient(config Config, client *http.Client, logger log.Logger) *Client {
 		httpClient: client,
 		address:    c.address + productBasePath,
 		logger:     logger,
+	}
+
+	c.notifyAPI = &notifyAPI{
+		httpClient: client,
+		address:    c.address,
 	}
 
 	return c
